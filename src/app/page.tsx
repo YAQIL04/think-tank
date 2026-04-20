@@ -6,6 +6,7 @@ import CardImage from "@/components/CardImage";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useLang } from "@/context/LanguageContext";
 import { t } from "@/i18n/translations";
+import CreatorLinks from "@/components/CreatorLinks";
 
 export default function HomePage() {
   const { lang } = useLang();
@@ -93,8 +94,9 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="text-center py-6 text-white/20 text-xs">
-        {tr.footer}
+      <footer className="flex flex-col items-center gap-3 py-6">
+        <CreatorLinks />
+        <p className="text-white/20 text-xs">{tr.footer}</p>
       </footer>
     </main>
   );
