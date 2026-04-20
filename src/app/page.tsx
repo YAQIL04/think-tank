@@ -97,6 +97,7 @@ export default function HomePage() {
       <footer className="flex flex-col items-center gap-3 py-6">
         <CreatorLinks />
         <p className="text-white/20 text-xs">{tr.footer}</p>
+        <p className="text-white/15 text-xs">Built by Yaqi, Cr. Nuwa.Skill</p>
       </footer>
     </main>
   );
