@@ -1,4 +1,4 @@
-import { createAnthropic } from "@ai-sdk/anthropic";
+import { createOpenAI } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { readFileSync } from "fs";
 import { join } from "path";
@@ -27,12 +27,14 @@ export async function POST(req: Request) {
     return new Response("Skill file not found", { status: 500 });
   }
 
-  const anthropic = createAnthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
+  // DeepSeek 兼容 OpenAI 接口
+  const deepseek = createOpenAI({
+    apiKey: process.env.DEEPSEEK_API_KEY,
+    baseURL: "https://api.deepseek.com/v1",
   });
 
   const result = await streamText({
-    model: anthropic("claude-sonnet-4-6"),
+    model: deepseek("deepseek-chat"),
     system: systemPrompt,
     messages,
   });
