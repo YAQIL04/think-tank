@@ -20,14 +20,11 @@ export default function HomePage() {
           <LanguageToggle />
         </div>
 
-        <p className="text-xs uppercase tracking-[0.3em] text-white/35 mb-3 font-medium">
-          {lang === "zh" ? "Parthenon" : "帕特农"}
-        </p>
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
-          {tr.homeHeadline}
+        <h1 className="text-5xl md:text-6xl font-bold text-white mb-3 tracking-tight">
+          {tr.siteTitle}
         </h1>
-        <p className="text-white/50 text-lg max-w-md mx-auto leading-relaxed">
-          {tr.homeSubline}
+        <p className="text-white/50 text-base max-w-md mx-auto leading-relaxed">
+          {tr.siteSubtitle}
         </p>
       </header>
 
