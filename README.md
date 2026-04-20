@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 帕特农 · Parthenon
 
-## Getting Started
+> 随时召唤世界顶级思想家，以他们的心智模型为你答疑解惑  
+> Summon the world's greatest thinkers. Talk through their mental models.
 
-First, run the development server:
+🔗 **Live Demo:** [pantheon-psi-six.vercel.app](https://pantheon-psi-six.vercel.app)
+
+---
+
+## 产品介绍
+
+帕特农是一个个人智囊团产品。用户可以选择与四位顶级思想家对话，每位思想家的回应都基于其深度蒸馏的心智模型——不是泛化的 AI 回答，而是带有独特认知风格和思维框架的真实回应。
+
+支持中英文切换，所有对话均采用流式输出。
+
+## 智囊团成员
+
+| 人物 | 领域 | 核心方法论 |
+|------|------|-----------|
+| **Elon Musk** | 工程 · 未来主义 | 第一性原理 · 五步算法 · 白痴指数 |
+| **Naval Ravikant** | 财富 · 哲学 | 杠杆思维 · 特定知识 · 欲望管理 |
+| **Donald Trump** | 谈判 · 品牌 | 交易艺术 · 叙事控制 · 不可预测性 |
+| **Charlie Munger** | 投资 · 决策 | 多元思维模型 · 逆向思考 · Lollapalooza效应 |
+
+## 技术栈
+
+- **框架:** Next.js 14 (App Router) · TypeScript
+- **样式:** Tailwind CSS
+- **AI:** Vercel AI SDK · DeepSeek API
+- **部署:** Vercel
+
+## 本地运行
 
 ```bash
+# 1. 克隆仓库
+git clone https://github.com/YAQIL04/think-tank.git
+cd think-tank
+
+# 2. 安装依赖
+npm install
+
+# 3. 配置环境变量
+cp .env.example .env.local
+# 编辑 .env.local，填入你的 DeepSeek API Key
+
+# 4. 启动开发服务器
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+打开 [http://localhost:3000](http://localhost:3000) 即可使用。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 环境变量
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| 变量名 | 说明 |
+|--------|------|
+| `DEEPSEEK_API_KEY` | DeepSeek API Key，在 [platform.deepseek.com](https://platform.deepseek.com/api_keys) 获取 |
 
-## Learn More
+## 扩展新人物
 
-To learn more about Next.js, take a look at the following resources:
+在 `src/config/characters.ts` 新增一条配置，在 `src/skills/` 目录下放入对应的 SKILL.md 文件即可。无需修改其他代码。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 致谢
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+四位思想家的心智模型由 [Nuwa.Skill](https://github.com/alchaincyf) 框架蒸馏生成。
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Built by [Yaqi](https://www.linkedin.com/in/luoyaqi) · MIT License
