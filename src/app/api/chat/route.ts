@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const { messages, characterId } = await req.json();
+  const { messages, characterId, language } = await req.json();
 
   if (!characterId) {
     return new Response("Missing characterId", { status: 400 });
@@ -27,7 +27,13 @@ export async function POST(req: Request) {
     return new Response("Skill file not found", { status: 500 });
   }
 
-  // DeepSeek 兼容 OpenAI 接口
+  // Append language instruction
+  const langInstruction =
+    language === "en"
+      ? "\n\nIMPORTANT: Please respond in English for all your answers."
+      : "\n\n重要：请用中文回答所有问题。";
+  systemPrompt += langInstruction;
+
   const deepseek = createOpenAI({
     apiKey: process.env.DEEPSEEK_API_KEY,
     baseURL: "https://api.deepseek.com/v1",

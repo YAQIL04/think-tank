@@ -7,43 +7,23 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Character } from "@/config/characters";
 import CharacterAvatar from "@/components/CharacterAvatar";
+import LanguageToggle from "@/components/LanguageToggle";
+import { useLang } from "@/context/LanguageContext";
+import { t, suggestedQuestions } from "@/i18n/translations";
 
 interface Props {
   character: Character;
 }
 
-const SUGGESTED_QUESTIONS: Record<string, string[]> = {
-  "elon-musk": [
-    "如何用五步算法优化一个产品流程？",
-    "你怎么看待现在的AI发展趋势？",
-    "我的创业项目成本太高，怎么思考这个问题？",
-  ],
-  naval: [
-    "我同时想做很多事，但精力不够，怎么办？",
-    "如何判断一个机会是否有真正的杠杆？",
-    "大厂干了5年，要不要出来创业？",
-  ],
-  trump: [
-    "如何在谈判中占据主动？",
-    "面对批评和攻击，应该怎么应对？",
-    "如何建立一个强大的个人品牌？",
-  ],
-  munger: [
-    "如何避免在投资中犯愚蠢的错误？",
-    "大家都在追某个热点，我该跟风吗？",
-    "如何培养多元思维模型的能力？",
-  ],
-};
-
 export default function ChatClient({ character }: Props) {
+  const { lang } = useLang();
+  const tr = t[lang];
   const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const [hasStarted, setHasStarted] = useState(false);
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, error, reload, setMessages } =
     useChat({
       api: "/api/chat",
-      body: { characterId: character.id },
+      body: { characterId: character.id, language: lang },
       onFinish: () => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
       },
@@ -54,24 +34,13 @@ export default function ChatClient({ character }: Props) {
   }, [messages]);
 
   const handleSuggestedQuestion = (question: string) => {
-    setHasStarted(true);
-    const fakeEvent = {
-      preventDefault: () => {},
-    } as React.FormEvent<HTMLFormElement>;
-
     handleInputChange({
       target: { value: question },
     } as React.ChangeEvent<HTMLTextAreaElement>);
-
     setTimeout(() => {
       const form = document.getElementById("chat-form") as HTMLFormElement;
       if (form) form.requestSubmit();
     }, 50);
-  };
-
-  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    setHasStarted(true);
-    handleSubmit(e);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -82,19 +51,12 @@ export default function ChatClient({ character }: Props) {
     }
   };
 
-  const handleNewChat = () => {
-    setMessages([]);
-    setHasStarted(false);
-  };
-
-  const suggestions = SUGGESTED_QUESTIONS[character.id] || [];
+  const suggestions = suggestedQuestions[character.id]?.[lang] ?? [];
 
   return (
     <div className="flex flex-col h-screen bg-[#0a0a0f]">
       {/* Top Bar */}
-      <header
-        className="flex items-center justify-between px-4 py-3 border-b border-white/8 bg-[#0d0d14] shrink-0"
-      >
+      <header className="flex items-center justify-between px-4 py-3 border-b border-white/8 bg-[#0d0d14] shrink-0">
         <Link
           href="/"
           className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors text-sm"
@@ -102,7 +64,7 @@ export default function ChatClient({ character }: Props) {
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          智囊团
+          {tr.backLabel}
         </Link>
 
         {/* Character info */}
@@ -110,36 +72,37 @@ export default function ChatClient({ character }: Props) {
           <CharacterAvatar character={character} size={32} />
           <div>
             <p className="text-sm font-semibold text-white leading-tight">{character.name}</p>
-            <p className="text-[11px] text-white/40 leading-tight">{character.title}</p>
+            <p className="text-[11px] text-white/40 leading-tight">{character.title[lang]}</p>
           </div>
         </div>
 
-        {/* New chat */}
-        <button
-          onClick={handleNewChat}
-          className="text-white/40 hover:text-white/70 transition-colors text-sm flex items-center gap-1.5"
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-          新对话
-        </button>
+        {/* Right side: language toggle + new chat */}
+        <div className="flex items-center gap-3">
+          <LanguageToggle />
+          <button
+            onClick={() => setMessages([])}
+            className="text-white/40 hover:text-white/70 transition-colors text-sm flex items-center gap-1.5"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            {tr.newChat}
+          </button>
+        </div>
       </header>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-            {/* Avatar large */}
             <CharacterAvatar character={character} size={80} className="mb-4 ring-2 ring-white/10" />
             <h2 className="text-xl font-bold text-white mb-1">{character.name}</h2>
             <p className="text-sm text-white/40 mb-8 max-w-xs leading-relaxed">
-              {character.description}
+              {character.description[lang]}
             </p>
 
-            {/* Suggested questions */}
             <div className="w-full max-w-lg space-y-2">
-              <p className="text-xs text-white/30 mb-3 uppercase tracking-wider">试试问他</p>
+              <p className="text-xs text-white/30 mb-3 uppercase tracking-wider">{tr.tryAsking}</p>
               {suggestions.map((q, i) => (
                 <button
                   key={i}
@@ -201,12 +164,9 @@ export default function ChatClient({ character }: Props) {
             {error && (
               <div className="flex justify-center">
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400 flex items-center gap-3">
-                  <span>发送失败，请重试</span>
-                  <button
-                    onClick={() => reload()}
-                    className="text-red-300 hover:text-red-100 underline"
-                  >
-                    重试
+                  <span>{tr.sendError}</span>
+                  <button onClick={() => reload()} className="text-red-300 hover:text-red-100 underline">
+                    {tr.retry}
                   </button>
                 </div>
               </div>
@@ -221,15 +181,14 @@ export default function ChatClient({ character }: Props) {
       <div className="shrink-0 border-t border-white/8 bg-[#0d0d14] px-4 py-4">
         <form
           id="chat-form"
-          onSubmit={handleFormSubmit}
+          onSubmit={handleSubmit}
           className="max-w-2xl mx-auto flex gap-3 items-end"
         >
           <textarea
-            ref={inputRef}
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder={`和 ${character.name} 聊聊…`}
+            placeholder={tr.inputPlaceholder(character.name)}
             rows={1}
             className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 resize-none focus:outline-none focus:border-white/25 transition-colors leading-relaxed"
             style={{ maxHeight: "160px", overflowY: "auto" }}
@@ -239,23 +198,16 @@ export default function ChatClient({ character }: Props) {
             disabled={isLoading || !input.trim()}
             className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 shrink-0 disabled:opacity-30"
             style={{
-              background: input.trim() && !isLoading ? character.accentColor : undefined,
-              backgroundColor: !input.trim() || isLoading ? "rgba(255,255,255,0.05)" : undefined,
+              background: input.trim() && !isLoading ? character.accentColor : "rgba(255,255,255,0.05)",
             }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path
-                d="M2 8h12M10 4l4 4-4 4"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M2 8h12M10 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </form>
         <p className="text-center text-white/20 text-[11px] mt-2 max-w-2xl mx-auto">
-          Enter 发送 · Shift+Enter 换行
+          {tr.inputHint}
         </p>
       </div>
     </div>

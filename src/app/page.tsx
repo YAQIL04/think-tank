@@ -1,20 +1,33 @@
+"use client";
+
 import Link from "next/link";
 import { characters } from "@/config/characters";
 import CardImage from "@/components/CardImage";
+import LanguageToggle from "@/components/LanguageToggle";
+import { useLang } from "@/context/LanguageContext";
+import { t } from "@/i18n/translations";
 
 export default function HomePage() {
+  const { lang } = useLang();
+  const tr = t[lang];
+
   return (
     <main className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="pt-16 pb-8 px-6 text-center">
-        <p className="text-xs uppercase tracking-[0.3em] text-white/40 mb-4 font-medium">
-          Personal Think Tank
+      <header className="pt-14 pb-8 px-6 text-center relative">
+        {/* Language toggle — top right */}
+        <div className="absolute top-5 right-6">
+          <LanguageToggle />
+        </div>
+
+        <p className="text-xs uppercase tracking-[0.3em] text-white/35 mb-3 font-medium">
+          {lang === "zh" ? "Parthenon" : "帕特农"}
         </p>
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
-          你的个人智囊团
+          {tr.homeHeadline}
         </h1>
         <p className="text-white/50 text-lg max-w-md mx-auto leading-relaxed">
-          选择一位思想家，以他的心智模型与你深度对话
+          {tr.homeSubline}
         </p>
       </header>
 
@@ -30,7 +43,6 @@ export default function HomePage() {
               {/* Avatar */}
               <div className="relative h-52 w-full overflow-hidden bg-white/5">
                 <CardImage character={character} />
-                {/* Gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent" />
               </div>
 
@@ -39,11 +51,13 @@ export default function HomePage() {
                 <h2 className="text-lg font-bold text-white mb-1">
                   {character.name}
                 </h2>
-                <p className="text-xs text-white/40 mb-3">{character.title}</p>
+                <p className="text-xs text-white/40 mb-3">
+                  {character.title[lang]}
+                </p>
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1.5 mb-3">
-                  {character.tags.map((tag) => (
+                  {character.tags[lang].map((tag) => (
                     <span
                       key={tag}
                       className="text-[11px] px-2 py-0.5 rounded-full border"
@@ -59,7 +73,7 @@ export default function HomePage() {
                 </div>
 
                 <p className="text-sm text-white/55 leading-relaxed line-clamp-3">
-                  {character.description}
+                  {character.description[lang]}
                 </p>
               </div>
 
@@ -73,7 +87,7 @@ export default function HomePage() {
                     background: `${character.accentColor}15`,
                   }}
                 >
-                  开始对话 →
+                  {tr.startChat}
                 </div>
               </div>
             </Link>
@@ -83,7 +97,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="text-center py-6 text-white/20 text-xs">
-        基于公开信息提炼的思维框架，仅供参考学习
+        {tr.footer}
       </footer>
     </main>
   );
