@@ -25,12 +25,6 @@ function formatLastUpdated(iso: string, lang: "zh" | "en") {
   return lang === "zh" ? `上次更新：${time}` : `Last updated: ${time}`;
 }
 
-function formatRemaining(hours: number, minutes: number, lang: "zh" | "en") {
-  return lang === "zh"
-    ? `距下次刷新还有 ${hours} 小时 ${minutes} 分钟`
-    : `Next refresh available in ${hours}h ${minutes}m`;
-}
-
 // ── components ────────────────────────────────────────────────────────────────
 
 function NewsCard({
@@ -46,7 +40,6 @@ function NewsCard({
 
   return (
     <div className="rounded-2xl bg-white/[0.04] border border-white/8 overflow-hidden">
-      {/* Article header */}
       <div className="p-5 pb-4">
         <h3 className="text-base font-semibold text-white leading-snug mb-2">
           {t(article.title)}
@@ -65,10 +58,8 @@ function NewsCard({
         </a>
       </div>
 
-      {/* Divider */}
       <div className="border-t border-white/6 mx-5" />
 
-      {/* Expert comments */}
       <div className="p-5 pt-4 space-y-3">
         <p className="text-[11px] uppercase tracking-wider text-white/25 mb-3">
           {lang === "zh" ? "专家点评" : "Expert Views"}
@@ -114,15 +105,11 @@ function NewsCard({
 export default function NewsPage() {
   const { lang } = useLang();
   const [data, setData] = useState<DailyNews | null>(null);
-  const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [rateLimited, setRateLimited] = useState<{ hours: number; minutes: number } | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [zhCache, setZhCache] = useState<Record<string, string>>({});
   const [translating, setTranslating] = useState(false);
   const [translateError, setTranslateError] = useState<string | null>(null);
 
-  // Load existing news on mount
   useEffect(() => {
     fetch("/api/news")
       .then((r) => r.json())
@@ -132,16 +119,13 @@ export default function NewsPage() {
       .finally(() => setInitialLoading(false));
   }, []);
 
-  // Clear translation cache when data changes
   useEffect(() => {
     setZhCache({});
     setTranslateError(null);
   }, [data]);
 
-  // Lazy translate when user switches to zh
   useEffect(() => {
     if (lang !== "zh" || !data?.articles?.length || translating) return;
-    // Already have translations for this dataset
     if (typeof data.articles[0].title === "string" && zhCache[data.articles[0].title]) return;
 
     const texts = data.articles.flatMap((a) => [
@@ -175,32 +159,8 @@ export default function NewsPage() {
     [lang, zhCache]
   );
 
-  const handleRefresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/news/refresh", { method: "POST" });
-      const json = await res.json();
-      if (res.status === 429) {
-        setRateLimited({ hours: json.hours, minutes: json.minutes });
-      } else if (!res.ok) {
-        setError(json.detail ?? json.error ?? "unknown error");
-      } else {
-        setData(json);
-        setRateLimited(null);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "network error");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const canRefresh = !loading && !rateLimited;
-
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
-      {/* Top nav */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-white/8 bg-[#0d0d14]">
         <Link
           href="/"
@@ -215,10 +175,15 @@ export default function NewsPage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-8">
-        {/* Page header */}
         <div className="mb-8">
           <p className="text-xs uppercase tracking-[0.3em] text-white/30 mb-2">
-            {formatDate(lang)}
+            {lang === "zh"
+              ? (() => {
+                  const now = new Date();
+                  const days = ["日", "一", "二", "三", "四", "五", "六"];
+                  return `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 星期${days[now.getDay()]}`;
+                })()
+              : new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
           <h1 className="text-2xl font-bold text-white mb-1">
             {lang === "zh" ? "每日智囊简报" : "Daily Briefing"}
@@ -230,12 +195,12 @@ export default function NewsPage() {
           </p>
         </div>
 
-        {/* Refresh bar */}
-        <div className="flex items-center justify-between mb-8 p-4 rounded-xl bg-white/[0.03] border border-white/8">
-          <div className="text-sm">
+        {/* Status bar */}
+        <div className="flex items-center justify-between mb-8 p-4 rounded-xl bg-white/[0.03] border border-white/8 text-sm">
+          <div>
             {data?.last_updated
               ? <span className="text-white/40">{formatLastUpdated(data.last_updated, lang)}</span>
-              : <span className="text-white/25">{lang === "zh" ? "暂无数据，点击刷新获取今日简报" : "No data yet — click refresh to load today's briefing"}</span>
+              : <span className="text-white/25">{lang === "zh" ? "今日简报加载中…" : "Loading today's briefing…"}</span>
             }
             {translating && (
               <p className="text-white/25 text-xs mt-0.5">翻译中…</p>
@@ -243,42 +208,14 @@ export default function NewsPage() {
             {translateError && (
               <p className="text-red-400/70 text-xs mt-0.5 break-all">翻译失败：{translateError}</p>
             )}
-            {rateLimited && (
-              <p className="text-amber-400/70 text-xs mt-0.5">
-                {formatRemaining(rateLimited.hours, rateLimited.minutes, lang)}
-              </p>
-            )}
-            {error && (
-              <p className="text-red-400/70 text-xs mt-0.5 break-all">
-                {lang === "zh" ? "获取失败：" : "Error: "}{error}
-              </p>
-            )}
           </div>
-          <button
-            onClick={handleRefresh}
-            disabled={!canRefresh}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{
-              background: canRefresh ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              color: canRefresh ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.3)",
-            }}
-          >
-            <svg
-              width="14" height="14" viewBox="0 0 14 14" fill="none"
-              className={loading ? "animate-spin" : ""}
-            >
-              <path d="M13 7A6 6 0 1 1 7 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M13 1v6h-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            {loading
-              ? (lang === "zh" ? "生成中…" : "Loading…")
-              : (lang === "zh" ? "刷新简报" : "Refresh")}
-          </button>
+          <span className="text-xs text-white/20">
+            {lang === "zh" ? "每天北京时间 8:00 自动更新" : "Auto-refreshes daily at 8 AM Beijing time"}
+          </span>
         </div>
 
         {/* Loading skeleton */}
-        {(initialLoading || loading) && (
+        {initialLoading && (
           <div className="space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="rounded-2xl bg-white/[0.03] border border-white/8 p-5 animate-pulse">
@@ -291,7 +228,7 @@ export default function NewsPage() {
         )}
 
         {/* News cards */}
-        {!initialLoading && !loading && (data?.articles?.length ?? 0) > 0 && (
+        {!initialLoading && (data?.articles?.length ?? 0) > 0 && (
           <div className="space-y-4">
             {data!.articles.map((article, i) => (
               <NewsCard key={i} article={article} lang={lang} t={t} />
@@ -300,9 +237,9 @@ export default function NewsPage() {
         )}
 
         {/* Empty state */}
-        {!initialLoading && !loading && !data?.articles?.length && (
+        {!initialLoading && !data?.articles?.length && (
           <div className="text-center py-20 text-white/25 text-sm">
-            {lang === "zh" ? "点击「刷新简报」获取今日新闻" : "Click \"Refresh\" to load today's news"}
+            {lang === "zh" ? "今日简报尚未生成，请稍后再来" : "Today's briefing hasn't been generated yet — check back later"}
           </div>
         )}
       </main>
