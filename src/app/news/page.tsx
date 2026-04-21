@@ -108,7 +108,7 @@ export default function NewsPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [rateLimited, setRateLimited] = useState<{ hours: number; minutes: number } | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Load existing news on mount
   useEffect(() => {
@@ -122,20 +122,20 @@ export default function NewsPage() {
 
   const handleRefresh = useCallback(async () => {
     setLoading(true);
-    setError(false);
+    setError(null);
     try {
       const res = await fetch("/api/news/refresh", { method: "POST" });
       const json = await res.json();
       if (res.status === 429) {
         setRateLimited({ hours: json.hours, minutes: json.minutes });
       } else if (!res.ok) {
-        setError(true);
+        setError(json.detail ?? json.error ?? "unknown error");
       } else {
         setData(json);
         setRateLimited(null);
       }
-    } catch {
-      setError(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "network error");
     } finally {
       setLoading(false);
     }
@@ -188,8 +188,8 @@ export default function NewsPage() {
               </p>
             )}
             {error && (
-              <p className="text-red-400/70 text-xs mt-0.5">
-                {lang === "zh" ? "获取失败，请稍后再试" : "Failed to load, please try again"}
+              <p className="text-red-400/70 text-xs mt-0.5 break-all">
+                {lang === "zh" ? "获取失败：" : "Error: "}{error}
               </p>
             )}
           </div>

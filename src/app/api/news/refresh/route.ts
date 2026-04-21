@@ -117,12 +117,17 @@ export async function POST(req: Request) {
 
   try {
     // Step 1: fetch raw news
+    console.log("[news/refresh] Step 1: fetching raw news...");
     const rawNews = await fetchRawNews();
+    console.log("[news/refresh] Step 1 OK, raw length:", rawNews.length);
 
     // Step 2: select & summarise top 5
+    console.log("[news/refresh] Step 2: selecting top 5...");
     const top5 = await selectTop5(rawNews);
+    console.log("[news/refresh] Step 2 OK, top5 count:", top5.length);
 
     // Step 3: generate expert comments in parallel per article
+    console.log("[news/refresh] Step 3: generating expert comments...");
     const experts = characters.map((c) => ({ id: c.id, name: c.name }));
 
     const articles: NewsArticle[] = await Promise.all(
@@ -146,7 +151,8 @@ export async function POST(req: Request) {
 
     return Response.json(dailyNews);
   } catch (err) {
-    console.error("News refresh error:", err);
-    return Response.json({ error: "refresh_failed" }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[news/refresh] FAILED:", message);
+    return Response.json({ error: "refresh_failed", detail: message }, { status: 500 });
   }
 }
