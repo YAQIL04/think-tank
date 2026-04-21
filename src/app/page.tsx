@@ -16,8 +16,14 @@ export default function HomePage() {
     <main className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="pt-14 pb-8 px-6 text-center relative">
-        {/* Language toggle — top right */}
-        <div className="absolute top-5 right-6">
+        {/* Top right controls */}
+        <div className="absolute top-5 right-6 flex items-center gap-3">
+          <Link
+            href="/news"
+            className="text-xs text-white/35 hover:text-white/65 transition-colors border border-white/10 hover:border-white/20 px-3 py-1.5 rounded-full"
+          >
+            {lang === "zh" ? "每日简报" : "Daily Brief"}
+          </Link>
           <LanguageToggle />
         </div>
 
