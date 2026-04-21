@@ -120,6 +120,7 @@ export default function NewsPage() {
   const [error, setError] = useState<string | null>(null);
   const [zhCache, setZhCache] = useState<Record<string, string>>({});
   const [translating, setTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState<string | null>(null);
 
   // Load existing news on mount
   useEffect(() => {
@@ -134,13 +135,14 @@ export default function NewsPage() {
   // Clear translation cache when data changes
   useEffect(() => {
     setZhCache({});
+    setTranslateError(null);
   }, [data]);
 
   // Lazy translate when user switches to zh
   useEffect(() => {
     if (lang !== "zh" || !data?.articles?.length || translating) return;
-    // Already have translations
-    if (zhCache[data.articles[0].title]) return;
+    // Already have translations for this dataset
+    if (typeof data.articles[0].title === "string" && zhCache[data.articles[0].title]) return;
 
     const texts = data.articles.flatMap((a) => [
       a.title,
@@ -149,17 +151,22 @@ export default function NewsPage() {
     ]);
 
     setTranslating(true);
+    setTranslateError(null);
     fetch("/api/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ texts }),
     })
-      .then((r) => r.json())
-      .then(({ translations }: { translations: string[] }) => {
+      .then(async (r) => {
+        const json = await r.json();
+        if (!r.ok) throw new Error(json.detail ?? json.error ?? `status ${r.status}`);
+        const translations: string[] = json.translations;
+        if (!Array.isArray(translations)) throw new Error("unexpected response shape");
         const map: Record<string, string> = {};
-        texts.forEach((text, i) => { map[text] = translations[i]; });
+        texts.forEach((text, i) => { if (translations[i]) map[text] = translations[i]; });
         setZhCache(map);
       })
+      .catch((e) => setTranslateError(e instanceof Error ? e.message : String(e)))
       .finally(() => setTranslating(false));
   }, [lang, data]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -231,9 +238,10 @@ export default function NewsPage() {
               : <span className="text-white/25">{lang === "zh" ? "暂无数据，点击刷新获取今日简报" : "No data yet — click refresh to load today's briefing"}</span>
             }
             {translating && (
-              <p className="text-white/25 text-xs mt-0.5">
-                {lang === "zh" ? "翻译中…" : "Translating…"}
-              </p>
+              <p className="text-white/25 text-xs mt-0.5">翻译中…</p>
+            )}
+            {translateError && (
+              <p className="text-red-400/70 text-xs mt-0.5 break-all">翻译失败：{translateError}</p>
             )}
             {rateLimited && (
               <p className="text-amber-400/70 text-xs mt-0.5">
