@@ -24,7 +24,7 @@ function deepseek() {
   })("deepseek-chat");
 }
 
-// ── Step 1: fetch raw news from NewsAPI ──────────────────────────────────────
+// ── Step 1: fetch raw news ───────────────────────────────────────────────────
 
 async function fetchRawNews(): Promise<string> {
   const url = new URL("https://newsapi.org/v2/top-headlines");
@@ -48,19 +48,21 @@ async function fetchRawNews(): Promise<string> {
   return JSON.stringify(articles);
 }
 
-// ── Step 2: DeepSeek selects & summarises top 5 ───────────────────────────────
+// ── Step 2: select top 5, generate bilingual title + summary ─────────────────
 
-async function selectTop5(rawNews: string): Promise<Omit<NewsArticle, "expert_comments">[]> {
+async function selectTop5(
+  rawNews: string
+): Promise<Omit<NewsArticle, "expert_comments">[]> {
   const { text } = await generateText({
     model: deepseek(),
     prompt: `
 You are a world-class news editor. From the following news articles, select the 5 most globally significant stories of today.
 
 Return ONLY a valid JSON array (no markdown, no extra text) with exactly 5 objects, each with:
-- title: string (clear, concise headline)
-- summary: string (under 100 words, neutral tone)
-- source_url: string (original article URL)
-- source_name: string (media outlet name)
+- title: { en: string, zh: string }   (en = clear English headline, zh = Chinese translation)
+- summary: { en: string, zh: string } (en = under 80 words neutral summary, zh = Chinese translation under 100 chars)
+- source_url: string
+- source_name: string
 - published_at: string (ISO format)
 
 News articles:
@@ -72,7 +74,7 @@ ${rawNews}
   return JSON.parse(cleaned);
 }
 
-// ── Step 3: generate one expert comment ──────────────────────────────────────
+// ── Step 3: generate bilingual expert comment ────────────────────────────────
 
 async function generateExpertComment(
   article: Omit<NewsArticle, "expert_comments">,
@@ -84,16 +86,25 @@ async function generateExpertComment(
     prompt: `
 You are ${expertName}. A major news story has just broken:
 
-Title: ${article.title}
-Summary: ${article.summary}
+Title: ${article.title.en}
+Summary: ${article.summary.en}
 
-Give your authentic, in-character reaction to this news in 2-3 sentences.
-Use your signature thinking style and vocabulary. Be direct, insightful, and specific.
-Do NOT start with "As ${expertName}..." — just speak directly.
+Give your authentic, in-character reaction in 2-3 sentences.
+Use your signature thinking style. Be direct, insightful, and specific.
+Do NOT start with "As ${expertName}...".
+
+Return ONLY a valid JSON object (no markdown) with:
+{ "en": "your comment in English", "zh": "same comment translated to Chinese" }
     `.trim(),
   });
 
-  return { expert_id: expertId, expert_name: expertName, comment: text.trim() };
+  const cleaned = text.replace(/```json|```/g, "").trim();
+  const parsed = JSON.parse(cleaned);
+  return {
+    expert_id: expertId,
+    expert_name: expertName,
+    comment: { en: parsed.en, zh: parsed.zh },
+  };
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
@@ -116,18 +127,15 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Step 1: fetch raw news
     console.log("[news/refresh] Step 1: fetching raw news...");
     const rawNews = await fetchRawNews();
-    console.log("[news/refresh] Step 1 OK, raw length:", rawNews.length);
+    console.log("[news/refresh] Step 1 OK, length:", rawNews.length);
 
-    // Step 2: select & summarise top 5
-    console.log("[news/refresh] Step 2: selecting top 5...");
+    console.log("[news/refresh] Step 2: selecting top 5 with bilingual content...");
     const top5 = await selectTop5(rawNews);
-    console.log("[news/refresh] Step 2 OK, top5 count:", top5.length);
+    console.log("[news/refresh] Step 2 OK, count:", top5.length);
 
-    // Step 3: generate expert comments in parallel per article
-    console.log("[news/refresh] Step 3: generating expert comments...");
+    console.log("[news/refresh] Step 3: generating bilingual expert comments...");
     const experts = characters.map((c) => ({ id: c.id, name: c.name }));
 
     const articles: NewsArticle[] = await Promise.all(
@@ -139,16 +147,15 @@ export async function POST(req: Request) {
       })
     );
 
-    // Store result in Redis (48h TTL so old data persists through the day)
     const dailyNews: DailyNews = {
       articles,
       last_updated: new Date().toISOString(),
     };
-    await getRedis().set(REDIS_KEYS.dailyNews, dailyNews, { ex: 60 * 60 * 48 });
 
-    // Record IP with 24h TTL
+    await getRedis().set(REDIS_KEYS.dailyNews, dailyNews, { ex: 60 * 60 * 48 });
     await getRedis().set(ipKey, Date.now(), { ex: RATE_LIMIT_TTL });
 
+    console.log("[news/refresh] Done.");
     return Response.json(dailyNews);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

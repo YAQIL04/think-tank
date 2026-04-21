@@ -1,6 +1,11 @@
+export interface Bilingual {
+  zh: string;
+  en: string;
+}
+
 export interface NewsArticle {
-  title: string;
-  summary: string;
+  title: Bilingual;
+  summary: Bilingual;
   source_url: string;
   source_name: string;
   published_at: string;
@@ -10,10 +15,10 @@ export interface NewsArticle {
 export interface ExpertComment {
   expert_id: string;
   expert_name: string;
-  comment: string;
+  comment: Bilingual;
 }
 
 export interface DailyNews {
   articles: NewsArticle[];
-  last_updated: string; // ISO timestamp
+  last_updated: string;
 }

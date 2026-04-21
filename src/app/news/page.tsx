@@ -41,9 +41,9 @@ function NewsCard({ article, lang }: { article: NewsArticle; lang: "zh" | "en" }
       {/* Article header */}
       <div className="p-5 pb-4">
         <h3 className="text-base font-semibold text-white leading-snug mb-2">
-          {article.title}
+          {article.title[lang]}
         </h3>
-        <p className="text-sm text-white/55 leading-relaxed mb-3">{article.summary}</p>
+        <p className="text-sm text-white/55 leading-relaxed mb-3">{article.summary[lang]}</p>
         <a
           href={article.source_url}
           target="_blank"
@@ -79,9 +79,9 @@ function NewsCard({ article, lang }: { article: NewsArticle; lang: "zh" | "en" }
                   className={`text-sm text-white/50 leading-relaxed cursor-pointer ${!isExpanded ? "line-clamp-2" : ""}`}
                   onClick={() => setExpanded(isExpanded ? null : ec.expert_id)}
                 >
-                  {ec.comment}
+                  {ec.comment[lang]}
                 </p>
-                {ec.comment.length > 120 && (
+                {ec.comment[lang].length > 120 && (
                   <button
                     onClick={() => setExpanded(isExpanded ? null : ec.expert_id)}
                     className="text-[11px] text-white/30 hover:text-white/50 mt-0.5 transition-colors"
