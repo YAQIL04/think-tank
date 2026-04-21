@@ -4,8 +4,8 @@ export interface Bilingual {
 }
 
 export interface NewsArticle {
-  title: Bilingual;
-  summary: Bilingual;
+  title: string;
+  summary: string;
   source_url: string;
   source_name: string;
   published_at: string;
@@ -15,7 +15,7 @@ export interface NewsArticle {
 export interface ExpertComment {
   expert_id: string;
   expert_name: string;
-  comment: Bilingual;
+  comment: string;
 }
 
 export interface DailyNews {

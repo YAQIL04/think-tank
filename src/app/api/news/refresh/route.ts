@@ -59,8 +59,8 @@ async function selectTop5(
 You are a world-class news editor. From the following news articles, select the 5 most globally significant stories of today.
 
 Return ONLY a valid JSON array (no markdown, no extra text) with exactly 5 objects, each with:
-- title: { en: string, zh: string }   (en = clear English headline, zh = Chinese translation)
-- summary: { en: string, zh: string } (en = under 80 words neutral summary, zh = Chinese translation under 100 chars)
+- title: string (clear English headline)
+- summary: string (under 80 words, neutral)
 - source_url: string
 - source_name: string
 - published_at: string (ISO format)
@@ -86,24 +86,20 @@ async function generateExpertComment(
     prompt: `
 You are ${expertName}. A major news story has just broken:
 
-Title: ${article.title.en}
-Summary: ${article.summary.en}
+Title: ${article.title}
+Summary: ${article.summary}
 
 Give your authentic, in-character reaction in 2-3 sentences.
 Use your signature thinking style. Be direct, insightful, and specific.
 Do NOT start with "As ${expertName}...".
-
-Return ONLY a valid JSON object (no markdown) with:
-{ "en": "your comment in English", "zh": "same comment translated to Chinese" }
+Return ONLY the comment text — no JSON, no quotes, no formatting.
     `.trim(),
   });
 
-  const cleaned = text.replace(/```json|```/g, "").trim();
-  const parsed = JSON.parse(cleaned);
   return {
     expert_id: expertId,
     expert_name: expertName,
-    comment: { en: parsed.en, zh: parsed.zh },
+    comment: text.trim(),
   };
 }
 

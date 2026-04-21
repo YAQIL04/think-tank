@@ -33,7 +33,15 @@ function formatRemaining(hours: number, minutes: number, lang: "zh" | "en") {
 
 // ── components ────────────────────────────────────────────────────────────────
 
-function NewsCard({ article, lang }: { article: NewsArticle; lang: "zh" | "en" }) {
+function NewsCard({
+  article,
+  lang,
+  t,
+}: {
+  article: NewsArticle;
+  lang: "zh" | "en";
+  t: (s: string) => string;
+}) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   return (
@@ -41,9 +49,9 @@ function NewsCard({ article, lang }: { article: NewsArticle; lang: "zh" | "en" }
       {/* Article header */}
       <div className="p-5 pb-4">
         <h3 className="text-base font-semibold text-white leading-snug mb-2">
-          {article.title[lang]}
+          {t(article.title)}
         </h3>
-        <p className="text-sm text-white/55 leading-relaxed mb-3">{article.summary[lang]}</p>
+        <p className="text-sm text-white/55 leading-relaxed mb-3">{t(article.summary)}</p>
         <a
           href={article.source_url}
           target="_blank"
@@ -68,6 +76,7 @@ function NewsCard({ article, lang }: { article: NewsArticle; lang: "zh" | "en" }
         {article.expert_comments.map((ec) => {
           const character = characters.find((c) => c.id === ec.expert_id);
           const isExpanded = expanded === ec.expert_id;
+          const commentText = t(ec.comment);
           return (
             <div key={ec.expert_id} className="flex gap-3">
               {character && <CharacterAvatar character={character} size={28} className="shrink-0 mt-0.5" />}
@@ -79,9 +88,9 @@ function NewsCard({ article, lang }: { article: NewsArticle; lang: "zh" | "en" }
                   className={`text-sm text-white/50 leading-relaxed cursor-pointer ${!isExpanded ? "line-clamp-2" : ""}`}
                   onClick={() => setExpanded(isExpanded ? null : ec.expert_id)}
                 >
-                  {ec.comment[lang]}
+                  {commentText}
                 </p>
-                {ec.comment[lang].length > 120 && (
+                {commentText.length > 120 && (
                   <button
                     onClick={() => setExpanded(isExpanded ? null : ec.expert_id)}
                     className="text-[11px] text-white/30 hover:text-white/50 mt-0.5 transition-colors"
@@ -109,6 +118,8 @@ export default function NewsPage() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [rateLimited, setRateLimited] = useState<{ hours: number; minutes: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [zhCache, setZhCache] = useState<Record<string, string>>({});
+  const [translating, setTranslating] = useState(false);
 
   // Load existing news on mount
   useEffect(() => {
@@ -119,6 +130,43 @@ export default function NewsPage() {
       })
       .finally(() => setInitialLoading(false));
   }, []);
+
+  // Clear translation cache when data changes
+  useEffect(() => {
+    setZhCache({});
+  }, [data]);
+
+  // Lazy translate when user switches to zh
+  useEffect(() => {
+    if (lang !== "zh" || !data?.articles?.length || translating) return;
+    // Already have translations
+    if (zhCache[data.articles[0].title]) return;
+
+    const texts = data.articles.flatMap((a) => [
+      a.title,
+      a.summary,
+      ...a.expert_comments.map((ec) => ec.comment),
+    ]);
+
+    setTranslating(true);
+    fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texts }),
+    })
+      .then((r) => r.json())
+      .then(({ translations }: { translations: string[] }) => {
+        const map: Record<string, string> = {};
+        texts.forEach((text, i) => { map[text] = translations[i]; });
+        setZhCache(map);
+      })
+      .finally(() => setTranslating(false));
+  }, [lang, data]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const t = useCallback(
+    (text: string) => (lang === "zh" ? (zhCache[text] ?? text) : text),
+    [lang, zhCache]
+  );
 
   const handleRefresh = useCallback(async () => {
     setLoading(true);
@@ -182,6 +230,11 @@ export default function NewsPage() {
               ? <span className="text-white/40">{formatLastUpdated(data.last_updated, lang)}</span>
               : <span className="text-white/25">{lang === "zh" ? "暂无数据，点击刷新获取今日简报" : "No data yet — click refresh to load today's briefing"}</span>
             }
+            {translating && (
+              <p className="text-white/25 text-xs mt-0.5">
+                {lang === "zh" ? "翻译中…" : "Translating…"}
+              </p>
+            )}
             {rateLimited && (
               <p className="text-amber-400/70 text-xs mt-0.5">
                 {formatRemaining(rateLimited.hours, rateLimited.minutes, lang)}
@@ -233,7 +286,7 @@ export default function NewsPage() {
         {!initialLoading && !loading && (data?.articles?.length ?? 0) > 0 && (
           <div className="space-y-4">
             {data!.articles.map((article, i) => (
-              <NewsCard key={i} article={article} lang={lang} />
+              <NewsCard key={i} article={article} lang={lang} t={t} />
             ))}
           </div>
         )}
