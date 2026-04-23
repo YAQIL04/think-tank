@@ -6,6 +6,7 @@ export interface Bilingual {
 export interface NewsArticle {
   title: string;
   summary: string;
+  image_url?: string;
   source_url: string;
   source_name: string;
   published_at: string;

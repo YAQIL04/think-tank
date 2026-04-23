@@ -40,6 +40,15 @@ function NewsCard({
 
   return (
     <div className="rounded-2xl bg-white/[0.04] border border-white/8 overflow-hidden">
+      {article.image_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={article.image_url}
+          alt={article.title}
+          className="w-full h-44 object-cover"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+        />
+      )}
       <div className="p-5 pb-4">
         <h3 className="text-base font-semibold text-white leading-snug mb-2">
           {t(article.title)}

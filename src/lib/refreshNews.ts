@@ -26,6 +26,7 @@ async function fetchRawNews(): Promise<string> {
     title: a.title,
     description: a.description,
     url: a.url,
+    image_url: a.urlToImage ?? null,
     source: a.source?.name,
     publishedAt: a.publishedAt,
   }));
@@ -44,6 +45,7 @@ You are a world-class news editor. From the following news articles, select the 
 Return ONLY a valid JSON array (no markdown, no extra text) with exactly 5 objects, each with:
 - title: string (clear English headline)
 - summary: string (under 80 words, neutral)
+- image_url: string | null (copy exactly from the article's image_url field)
 - source_url: string
 - source_name: string
 - published_at: string (ISO format)
