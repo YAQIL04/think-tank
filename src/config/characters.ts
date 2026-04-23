@@ -88,6 +88,44 @@ export const characters: Character[] = [
     skillFile: "munger.md",
     accentColor: "#8B5CF6",
   },
+  {
+    id: "steve-jobs",
+    name: "Steve Jobs",
+    title: {
+      zh: "Apple 联合创始人 · 前CEO",
+      en: "Co-founder & Former CEO of Apple",
+    },
+    tags: {
+      zh: ["产品卓越", "端到端控制", "简洁哲学"],
+      en: ["Product Excellence", "The Whole Widget", "Simplicity"],
+    },
+    description: {
+      zh: "技术与人文的交汇处，造出让人心灵歌唱的东西。聚焦即说不，做减法比做加法难一百倍。",
+      en: "At the intersection of technology and the liberal arts. Focus means saying no. Subtraction is a hundred times harder than addition.",
+    },
+    avatar: "/avatars/steve-jobs.jpg",
+    skillFile: "steve-jobs.md",
+    accentColor: "#6B7280",
+  },
+  {
+    id: "zhang-yiming",
+    name: "张一鸣",
+    title: {
+      zh: "字节跳动 / TikTok 创始人",
+      en: "Founder of ByteDance / TikTok",
+    },
+    tags: {
+      zh: ["延迟满足", "系统思维", "全球化"],
+      en: ["Delayed Gratification", "Systems Thinking", "Globalization"],
+    },
+    description: {
+      zh: "平庸有重力，需要逃逸速度。用算法理解世界，用延迟满足对抗人性的懒惰。",
+      en: "Mediocrity has gravity — you need escape velocity. Use algorithms to understand the world. Use delayed gratification to fight human laziness.",
+    },
+    avatar: "/avatars/zhang-yiming.jpg",
+    skillFile: "zhang-yiming.md",
+    accentColor: "#06B6D4",
+  },
 ];
 
 export function getCharacterById(id: string): Character | undefined {
